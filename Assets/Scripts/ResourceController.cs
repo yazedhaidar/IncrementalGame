@@ -1,8 +1,5 @@
 ﻿using UnityEngine;
-
 using UnityEngine.UI;
-
- 
 
 public class ResourceController : MonoBehaviour
 {
@@ -14,51 +11,31 @@ public class ResourceController : MonoBehaviour
 
     public AudioSource UpgradeSound;
     public AudioSource FailUpgradeSound;
-   
 
     private ResourceConfig _config;
+
     private int _index;
     private int _level
     {
-
         set
-
         {
-
             // Menyimpan value yang di set ke _level pada Progress Data
-
             UserDataManager.Progress.ResourcesLevels[_index] = value;
-
-            UserDataManager.Save();
-
+            UserDataManager.Save (true);
         }
-
-
 
         get
-
         {
-
             // Mengecek apakah index sudah terdapat pada Progress Data
-
-            if (!UserDataManager.HasResources(_index))
-
+            if (!UserDataManager.HasResources (_index))
             {
-
                 // Jika tidak maka tampilkan level 1
-
                 return 1;
-
             }
 
-
-
             // Jika iya maka tampilkan berdasarkan Progress Data
-
             return UserDataManager.Progress.ResourcesLevels[_index];
-
         }
-
     }
 
     public bool IsUnlocked { get; private set; }
@@ -77,7 +54,7 @@ public class ResourceController : MonoBehaviour
             }
         });
     }
- 
+
     public void SetConfig (int index, ResourceConfig config)
     {
         _index = index;
@@ -88,8 +65,7 @@ public class ResourceController : MonoBehaviour
         ResourceUnlockCost.text = $"Unlock Cost\n{ _config.UnlockCost }";
         ResourceUpgradeCost.text = $"Upgrade Cost\n{ GetUpgradeCost () }";
 
-        
-        SetUnlocked(_config.UnlockCost == 0 || UserDataManager.HasResources(_index));
+        SetUnlocked (_config.UnlockCost == 0 || UserDataManager.HasResources (_index));
     }
 
     public double GetOutput ()
@@ -122,6 +98,7 @@ public class ResourceController : MonoBehaviour
 
         ResourceUpgradeCost.text = $"Upgrade Cost\n{ GetUpgradeCost () }";
         ResourceDescription.text = $"{ _config.Name } Lv. { _level }\n+{ GetOutput ().ToString ("0") }";
+        AnalyticsManager.LogUpgradeEvent (_index, _level);
     }
 
     public void UnlockResource ()
@@ -135,30 +112,21 @@ public class ResourceController : MonoBehaviour
 
         SetUnlocked (true);
         GameManager.Instance.ShowNextResource ();
-
         AchievementController.Instance.UnlockAchievement (AchievementType.UnlockResource, _config.Name);
+        AnalyticsManager.LogUnlockEvent (_index);
     }
 
     public void SetUnlocked (bool unlocked)
     {
         IsUnlocked = unlocked;
-
-         if (unlocked)
-
+        if (unlocked)
         {
-
-            // Jika resources baru di unlock dan belum ada di Progress Data, maka tambahkan data
-
+            // Jika resources baru di unlock dan belum ada di Progress Data, maka tambahkan data baru
             if (!UserDataManager.HasResources (_index))
-
             {
-
                 UserDataManager.Progress.ResourcesLevels.Add (_level);
-
-                UserDataManager.Save ();
-
+                UserDataManager.Save (true);
             }
-
         }
 
         ResourceImage.color = IsUnlocked ? Color.white : Color.grey;
